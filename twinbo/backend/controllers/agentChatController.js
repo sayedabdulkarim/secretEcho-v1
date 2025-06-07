@@ -106,7 +106,7 @@ const sendMessage = async (req, res) => {
       userId: userId,
       threadId: threadId,
       role: "agent",
-      message: aiResponse,
+      message: aiResponse.content,
     });
 
     // Return response
@@ -114,7 +114,7 @@ const sendMessage = async (req, res) => {
       status: "success",
       data: {
         prompt: message.trim(),
-        message: aiResponse,
+        message: aiResponse.content,
         threadId: threadId,
         timestamp: agentChat.createdAt.toISOString(),
       },
