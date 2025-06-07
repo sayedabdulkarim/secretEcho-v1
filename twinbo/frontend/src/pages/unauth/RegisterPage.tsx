@@ -7,7 +7,7 @@ import { clearError, registerUser } from "../../slices/auth/authSlice";
 
 const RegisterPage = () => {
   const [formData, setFormData] = useState({
-    name: "",
+    username: "",
     email: "",
     password: "",
     confirmPassword: "",
@@ -43,7 +43,7 @@ const RegisterPage = () => {
     e.preventDefault();
 
     if (
-      !formData.name ||
+      !formData.username ||
       !formData.email ||
       !formData.password ||
       !formData.confirmPassword
@@ -65,7 +65,7 @@ const RegisterPage = () => {
     try {
       const result = await dispatch(
         registerUser({
-          name: formData.name,
+          username: formData.username,
           email: formData.email,
           password: formData.password,
         })
@@ -97,21 +97,21 @@ const RegisterPage = () => {
             <div className="space-y-4">
               <div>
                 <label
-                  htmlFor="name"
+                  htmlFor="username"
                   className="block text-sm font-medium text-gray-700"
                 >
-                  Full Name
+                  Username
                 </label>
                 <input
-                  id="name"
-                  name="name"
+                  id="username"
+                  name="username"
                   type="text"
-                  autoComplete="name"
+                  autoComplete="username"
                   required
-                  value={formData.name}
+                  value={formData.username}
                   onChange={handleChange}
                   className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition duration-200"
-                  placeholder="Enter your full name"
+                  placeholder="Choose a username"
                 />
               </div>
 
