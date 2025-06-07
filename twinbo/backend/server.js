@@ -18,6 +18,7 @@ const server = http.createServer(app);
 const allowedOrigins = [
   "http://localhost:3000",
   "https://localhost:3000",
+  "https://secret-echo-v1.vercel.app",
   process.env.FRONTEND_URL, // Set this environment variable in your deployment
 ].filter(Boolean); // Remove undefined values
 
