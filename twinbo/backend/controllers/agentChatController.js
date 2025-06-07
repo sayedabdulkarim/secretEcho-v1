@@ -138,6 +138,8 @@ const sendMessage = async (req, res) => {
 
 // Get chat history for the user's agent thread
 const getChatHistory = async (req, res) => {
+  console.log("User in getChatHistory:", req.user); // Add this line
+
   try {
     const userId = req.user._id;
     const threadId = generateThreadId(userId);
