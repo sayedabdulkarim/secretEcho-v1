@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "../store";
 import {
@@ -45,26 +45,78 @@ const ChatArea: React.FC<ChatAreaProps> = ({
   );
 
   // Use messages from API if available, otherwise use messages from Redux store
-  const apiMessages = messagesResponse?.data?.messages || [];
-  const reduxMessages = messages.filter(
-    (msg) =>
-      (msg.sender._id === userInfo?._id &&
-        msg.recipient._id === selectedUserId) ||
-      (msg.sender._id === selectedUserId && msg.recipient._id === userInfo?._id)
-  );
+  const apiMessages = useMemo(() => {
+    return messagesResponse?.data?.messages || [];
+  }, [messagesResponse?.data?.messages]);
+  
+  console.log("All Redux messages:", messages);
+  console.log("Current user info:", userInfo);
+  console.log("Selected user ID:", selectedUserId);
+  console.log("Messages count:", messages.length);
+  
+  // Debug the actual message structure
+  if (messages.length > 0) {
+    console.log("Sample message structure:", {
+      message: messages[0],
+      senderType: typeof messages[0].sender,
+      recipientType: typeof messages[0].recipient,
+    });
+  }
+  
+  // Get the current user ID - handle both _id and id properties
+  const currentUserId = userInfo?._id || (userInfo as any)?.id;
+  
+  console.log("User ID Debug:", {
+    userInfo,
+    userInfoId: userInfo?._id,
+    userInfoIdAlt: (userInfo as any)?.id,
+    currentUserId: currentUserId
+  });
+  
+  // Memoize the filtered Redux messages to avoid unnecessary re-renders
+  const reduxMessages = useMemo(() => {
+    if (!selectedUserId || !currentUserId) {
+      return [];
+    }
+    
+    return messages.filter((msg) => {
+      // Handle both sender as object and sender as string (in case of different message formats)
+      const senderId = typeof msg.sender === 'object' ? msg.sender._id : msg.sender;
+      const recipientId = typeof msg.recipient === 'object' ? msg.recipient._id : msg.recipient;
+      
+      const isFromSelectedUser = senderId === selectedUserId && recipientId === currentUserId;
+      const isToSelectedUser = senderId === currentUserId && recipientId === selectedUserId;
+      
+      console.log("Message filter debug:", {
+        msgId: msg._id,
+        senderId: senderId,
+        recipientId: recipientId,
+        selectedUserId,
+        currentUserId: currentUserId,
+        isFromSelectedUser,
+        isToSelectedUser,
+        shouldInclude: isFromSelectedUser || isToSelectedUser,
+        messageText: msg.text
+      });
+      
+      return isFromSelectedUser || isToSelectedUser;
+    });
+  }, [messages, selectedUserId, currentUserId]);
 
   // Combine API messages with Redux messages, avoiding duplicates
-  const allMessages = [...apiMessages];
-  reduxMessages.forEach((reduxMsg) => {
-    if (!allMessages.find((apiMsg) => apiMsg._id === reduxMsg._id)) {
-      allMessages.push(reduxMsg);
-    }
-  });
+  const currentMessages = useMemo(() => {
+    const allMessages = [...apiMessages];
+    reduxMessages.forEach((reduxMsg) => {
+      if (!allMessages.find((apiMsg) => apiMsg._id === reduxMsg._id)) {
+        allMessages.push(reduxMsg);
+      }
+    });
 
-  // Sort messages by creation date
-  const currentMessages = allMessages.sort(
-    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-  );
+    // Sort messages by creation date
+    return allMessages.sort(
+      (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    );
+  }, [apiMessages, reduxMessages]);
 
   // For now, we'll skip fetching messages until we have a conversation ID
   // This would need to be implemented once conversations are properly set up
@@ -75,27 +127,59 @@ const ChatArea: React.FC<ChatAreaProps> = ({
 
   useEffect(() => {
     scrollToBottom();
-  }, [currentMessages]);
+  }, [currentMessages.length, selectedUserId]); // Use length instead of the whole array
 
-  // Debug effect to log state
+  // Debug effect to log state changes
   useEffect(() => {
-    console.log("ChatArea Debug:", {
+    console.log("ChatArea State Changed:", {
       selectedUserId,
       selectedUsername,
-      currentConversation,
+      conversationId: currentConversation?._id,
       apiMessagesCount: apiMessages.length,
       reduxMessagesCount: reduxMessages.length,
       totalMessagesCount: currentMessages.length,
-      allMessages: currentMessages,
+      userInfo: currentUserId,
     });
   }, [
     selectedUserId,
     selectedUsername,
-    currentConversation,
+    currentConversation?._id,
     apiMessages.length,
     reduxMessages.length,
-    currentMessages,
+    currentMessages.length,
+    currentUserId,
   ]);
+
+  // Additional debug for Redux messages changes
+  useEffect(() => {
+    console.log("Redux Messages Updated:", {
+      totalMessages: messages.length,
+      filteredForCurrentChat: reduxMessages.length,
+      currentlySelectedUser: selectedUserId,
+      currentUserId: currentUserId,
+    });
+    
+    // Log each message and why it was or wasn't included
+    messages.forEach((msg, index) => {
+      const senderId = typeof msg.sender === 'object' ? msg.sender._id : msg.sender;
+      const recipientId = typeof msg.recipient === 'object' ? msg.recipient._id : msg.recipient;
+      const isFromSelectedUser = senderId === selectedUserId && recipientId === currentUserId;
+      const isToSelectedUser = senderId === currentUserId && recipientId === selectedUserId;
+      const shouldInclude = isFromSelectedUser || isToSelectedUser;
+      
+      console.log(`Message ${index + 1}:`, {
+        id: msg._id,
+        text: msg.text,
+        senderId,
+        recipientId,
+        selectedUserId,
+        currentUserId: currentUserId,
+        isFromSelected: isFromSelectedUser,
+        isToSelected: isToSelectedUser,
+        included: shouldInclude
+      });
+    });
+  }, [messages, reduxMessages.length, selectedUserId, currentUserId]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -184,7 +268,17 @@ const ChatArea: React.FC<ChatAreaProps> = ({
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {currentMessages.length > 0 ? (
           currentMessages.map((msg) => {
-            const isOwnMessage = msg.sender._id === userInfo?._id;
+            const senderId = typeof msg.sender === 'object' ? msg.sender._id : msg.sender;
+            const isOwnMessage = senderId === currentUserId;
+            
+            console.log("Rendering message:", {
+              msgId: msg._id,
+              senderId: senderId,
+              currentUserId: currentUserId,
+              isOwnMessage,
+              text: msg.text
+            });
+            
             return (
               <div
                 key={msg._id}
