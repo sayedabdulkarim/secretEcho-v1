@@ -7,7 +7,7 @@ import {
 
 export const aiAgentApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    getChatHistory: builder.query<GetHistoryResponse, void>({
+    getAgentChatHistory: builder.query<GetHistoryResponse, void>({
       query: () => ({
         url: "api/ai-agent/history",
         method: "GET",
@@ -15,7 +15,10 @@ export const aiAgentApiSlice = apiSlice.injectEndpoints({
       transformResponse: (response: GetHistoryResponse) => response,
       providesTags: ["AiAgentChat"],
     }),
-    sendMessage: builder.mutation<SendMessageResponse, SendMessageRequest>({
+    sendMessageToAgent: builder.mutation<
+      SendMessageResponse,
+      SendMessageRequest
+    >({
       query: (data) => ({
         url: "api/ai-agent/message",
         method: "POST",
@@ -27,5 +30,8 @@ export const aiAgentApiSlice = apiSlice.injectEndpoints({
   }),
 });
 
-export const { useGetChatHistoryQuery, useSendMessageMutation } =
-  aiAgentApiSlice;
+export const {
+  useGetAgentChatHistoryQuery,
+  useLazyGetAgentChatHistoryQuery,
+  useSendMessageToAgentMutation,
+} = aiAgentApiSlice;

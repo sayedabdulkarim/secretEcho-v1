@@ -13,8 +13,8 @@ import {
   setThreadId,
 } from "../slices/ai-agent/aiAgentSlice";
 import {
-  useGetChatHistoryQuery,
-  useSendMessageMutation,
+  useGetAgentChatHistoryQuery,
+  useSendMessageToAgentMutation,
 } from "../slices/ai-agent/aiAgentApiSlice";
 import { AiAgentMessage } from "../types/aiAgent";
 
@@ -30,11 +30,11 @@ const AiChatAgentModal: React.FC = () => {
     data: historyData,
     isLoading: isLoadingHistory,
     error: historyError,
-  } = useGetChatHistoryQuery(undefined, {
+  } = useGetAgentChatHistoryQuery(undefined, {
     skip: !isModalOpen,
   });
 
-  const [sendMessage] = useSendMessageMutation();
+  const [sendMessage] = useSendMessageToAgentMutation();
 
   // Load chat history when data is available
   useEffect(() => {
