@@ -111,7 +111,7 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
         <div className="flex items-center justify-between">
           {!isCollapsed && (
             <h3 className="font-medium text-gray-900 dark:text-white">
-              Users ({users.length})
+              Users List ({users.length})
             </h3>
           )}
           <button
