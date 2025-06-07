@@ -10,6 +10,7 @@ import {
   addOnlineUser,
   removeOnlineUser,
   addMessage,
+  setTyping,
 } from "../../slices/chat/chatSlice";
 
 const ChatPage = () => {
@@ -46,8 +47,15 @@ const ChatPage = () => {
         dispatch(addMessage(message));
       });
 
+      // Listen for typing indicators
+      socketService.onTyping((data) => {
+        console.log("Typing event received:", data);
+        dispatch(setTyping(data));
+      });
+
       // Cleanup on component unmount
       return () => {
+        socketService.removeTypingListeners();
         socketService.disconnect();
       };
     }

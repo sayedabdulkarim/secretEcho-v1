@@ -7,6 +7,7 @@ import {
   useGetMessagesQuery,
 } from "../slices/chat/chatApiSlice";
 import { addMessage } from "../slices/chat/chatSlice";
+import socketService from "../services/socketService";
 
 interface ChatAreaProps {
   selectedUserId: string | null;
@@ -19,8 +20,10 @@ const ChatArea: React.FC<ChatAreaProps> = ({
 }) => {
   const dispatch = useDispatch();
   const [message, setMessage] = useState("");
+  const [isUserTyping, setIsUserTyping] = useState(false);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { onlineUsers, messages } = useSelector(
+  const { onlineUsers, messages, isTyping, typingUser } = useSelector(
     (state: RootState) => state.chatReducer
   );
   const { userInfo } = useSelector((state: RootState) => state.authReducer);
@@ -48,12 +51,12 @@ const ChatArea: React.FC<ChatAreaProps> = ({
   const apiMessages = useMemo(() => {
     return messagesResponse?.data?.messages || [];
   }, [messagesResponse?.data?.messages]);
-  
+
   console.log("All Redux messages:", messages);
   console.log("Current user info:", userInfo);
   console.log("Selected user ID:", selectedUserId);
   console.log("Messages count:", messages.length);
-  
+
   // Debug the actual message structure
   if (messages.length > 0) {
     console.log("Sample message structure:", {
@@ -62,31 +65,35 @@ const ChatArea: React.FC<ChatAreaProps> = ({
       recipientType: typeof messages[0].recipient,
     });
   }
-  
+
   // Get the current user ID - handle both _id and id properties
   const currentUserId = userInfo?._id || (userInfo as any)?.id;
-  
+
   console.log("User ID Debug:", {
     userInfo,
     userInfoId: userInfo?._id,
     userInfoIdAlt: (userInfo as any)?.id,
-    currentUserId: currentUserId
+    currentUserId: currentUserId,
   });
-  
+
   // Memoize the filtered Redux messages to avoid unnecessary re-renders
   const reduxMessages = useMemo(() => {
     if (!selectedUserId || !currentUserId) {
       return [];
     }
-    
+
     return messages.filter((msg) => {
       // Handle both sender as object and sender as string (in case of different message formats)
-      const senderId = typeof msg.sender === 'object' ? msg.sender._id : msg.sender;
-      const recipientId = typeof msg.recipient === 'object' ? msg.recipient._id : msg.recipient;
-      
-      const isFromSelectedUser = senderId === selectedUserId && recipientId === currentUserId;
-      const isToSelectedUser = senderId === currentUserId && recipientId === selectedUserId;
-      
+      const senderId =
+        typeof msg.sender === "object" ? msg.sender._id : msg.sender;
+      const recipientId =
+        typeof msg.recipient === "object" ? msg.recipient._id : msg.recipient;
+
+      const isFromSelectedUser =
+        senderId === selectedUserId && recipientId === currentUserId;
+      const isToSelectedUser =
+        senderId === currentUserId && recipientId === selectedUserId;
+
       console.log("Message filter debug:", {
         msgId: msg._id,
         senderId: senderId,
@@ -96,9 +103,9 @@ const ChatArea: React.FC<ChatAreaProps> = ({
         isFromSelectedUser,
         isToSelectedUser,
         shouldInclude: isFromSelectedUser || isToSelectedUser,
-        messageText: msg.text
+        messageText: msg.text,
       });
-      
+
       return isFromSelectedUser || isToSelectedUser;
     });
   }, [messages, selectedUserId, currentUserId]);
@@ -114,7 +121,8 @@ const ChatArea: React.FC<ChatAreaProps> = ({
 
     // Sort messages by creation date
     return allMessages.sort(
-      (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      (a, b) =>
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
     );
   }, [apiMessages, reduxMessages]);
 
@@ -127,7 +135,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
 
   useEffect(() => {
     scrollToBottom();
-  }, [currentMessages.length, selectedUserId]); // Use length instead of the whole array
+  }, [currentMessages.length, selectedUserId, isTyping]); // Also scroll on typing indicator changes
 
   // Debug effect to log state changes
   useEffect(() => {
@@ -158,15 +166,19 @@ const ChatArea: React.FC<ChatAreaProps> = ({
       currentlySelectedUser: selectedUserId,
       currentUserId: currentUserId,
     });
-    
+
     // Log each message and why it was or wasn't included
     messages.forEach((msg, index) => {
-      const senderId = typeof msg.sender === 'object' ? msg.sender._id : msg.sender;
-      const recipientId = typeof msg.recipient === 'object' ? msg.recipient._id : msg.recipient;
-      const isFromSelectedUser = senderId === selectedUserId && recipientId === currentUserId;
-      const isToSelectedUser = senderId === currentUserId && recipientId === selectedUserId;
+      const senderId =
+        typeof msg.sender === "object" ? msg.sender._id : msg.sender;
+      const recipientId =
+        typeof msg.recipient === "object" ? msg.recipient._id : msg.recipient;
+      const isFromSelectedUser =
+        senderId === selectedUserId && recipientId === currentUserId;
+      const isToSelectedUser =
+        senderId === currentUserId && recipientId === selectedUserId;
       const shouldInclude = isFromSelectedUser || isToSelectedUser;
-      
+
       console.log(`Message ${index + 1}:`, {
         id: msg._id,
         text: msg.text,
@@ -176,7 +188,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
         currentUserId: currentUserId,
         isFromSelected: isFromSelectedUser,
         isToSelected: isToSelectedUser,
-        included: shouldInclude
+        included: shouldInclude,
       });
     });
   }, [messages, reduxMessages.length, selectedUserId, currentUserId]);
@@ -189,6 +201,16 @@ const ChatArea: React.FC<ChatAreaProps> = ({
     }
 
     try {
+      // Stop typing indicator when sending message
+      if (selectedUserId) {
+        socketService.emitTyping(selectedUserId, false);
+        setIsUserTyping(false);
+        if (typingTimeoutRef.current) {
+          clearTimeout(typingTimeoutRef.current);
+          typingTimeoutRef.current = null;
+        }
+      }
+
       const response = await sendMessage({
         recipientId: selectedUserId,
         text: message.trim(),
@@ -205,6 +227,54 @@ const ChatArea: React.FC<ChatAreaProps> = ({
       console.error("Failed to send message:", error);
     }
   };
+
+  // Handle typing indicator
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newMessage = e.target.value;
+    setMessage(newMessage);
+
+    if (selectedUserId) {
+      // Start typing indicator if user is typing and not already typing
+      if (newMessage.trim() && !isUserTyping) {
+        socketService.emitTyping(selectedUserId, true);
+        setIsUserTyping(true);
+      }
+
+      // Clear existing timeout
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+
+      // Set timeout to stop typing after 2 seconds of no typing
+      typingTimeoutRef.current = setTimeout(() => {
+        socketService.emitTyping(selectedUserId, false);
+        setIsUserTyping(false);
+        typingTimeoutRef.current = null;
+      }, 2000);
+
+      // If message is empty, stop typing immediately
+      if (!newMessage.trim() && isUserTyping) {
+        socketService.emitTyping(selectedUserId, false);
+        setIsUserTyping(false);
+        if (typingTimeoutRef.current) {
+          clearTimeout(typingTimeoutRef.current);
+          typingTimeoutRef.current = null;
+        }
+      }
+    }
+  };
+
+  // Cleanup typing timeout on unmount or when selected user changes
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+      if (selectedUserId && isUserTyping) {
+        socketService.emitTyping(selectedUserId, false);
+      }
+    };
+  }, [selectedUserId, isUserTyping]);
 
   if (!selectedUserId) {
     return (
@@ -268,17 +338,18 @@ const ChatArea: React.FC<ChatAreaProps> = ({
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {currentMessages.length > 0 ? (
           currentMessages.map((msg) => {
-            const senderId = typeof msg.sender === 'object' ? msg.sender._id : msg.sender;
+            const senderId =
+              typeof msg.sender === "object" ? msg.sender._id : msg.sender;
             const isOwnMessage = senderId === currentUserId;
-            
+
             console.log("Rendering message:", {
               msgId: msg._id,
               senderId: senderId,
               currentUserId: currentUserId,
               isOwnMessage,
-              text: msg.text
+              text: msg.text,
             });
-            
+
             return (
               <div
                 key={msg._id}
@@ -315,6 +386,31 @@ const ChatArea: React.FC<ChatAreaProps> = ({
             Start a conversation with {selectedUsername}
           </div>
         )}
+
+        {/* Typing Indicator */}
+        {isTyping && typingUser === selectedUserId && (
+          <div className="flex justify-start">
+            <div className="max-w-xs lg:max-w-md px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700">
+              <div className="flex items-center space-x-1">
+                <span className="text-sm text-gray-600 dark:text-gray-300">
+                  {selectedUsername} is typing
+                </span>
+                <div className="flex items-center space-x-1">
+                  <div className="w-1 h-1 bg-gray-400 rounded-full animate-bounce"></div>
+                  <div
+                    className="w-1 h-1 bg-gray-400 rounded-full animate-bounce"
+                    style={{ animationDelay: "0.1s" }}
+                  ></div>
+                  <div
+                    className="w-1 h-1 bg-gray-400 rounded-full animate-bounce"
+                    style={{ animationDelay: "0.2s" }}
+                  ></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div ref={messagesEndRef} />
       </div>
 
@@ -327,7 +423,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
           <input
             type="text"
             value={message}
-            onChange={(e) => setMessage(e.target.value)}
+            onChange={handleInputChange}
             placeholder="Type a message..."
             className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-full focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 text-sm"
             disabled={isSending}

@@ -86,6 +86,13 @@ class SocketService {
     }
   }
 
+  // Add method to remove typing listeners when component unmounts
+  removeTypingListeners() {
+    if (this.socket) {
+      this.socket.off("typing");
+    }
+  }
+
   getSocket() {
     return this.socket;
   }

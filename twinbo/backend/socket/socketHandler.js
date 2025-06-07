@@ -91,24 +91,12 @@ const handleConnection = (io) => {
 
     // Handle user typing indicators
     socket.on("typing", (data) => {
-      const { recipientId, conversationId } = data;
+      const { recipientId, isTyping } = data;
 
       if (connectedUsers.has(recipientId)) {
-        socket.to(recipientId).emit("userTyping", {
-          conversationId,
+        socket.to(recipientId).emit("typing", {
           userId: socket.userId,
-          username: socket.user.username,
-        });
-      }
-    });
-
-    socket.on("stopTyping", (data) => {
-      const { recipientId, conversationId } = data;
-
-      if (connectedUsers.has(recipientId)) {
-        socket.to(recipientId).emit("userStoppedTyping", {
-          conversationId,
-          userId: socket.userId,
+          isTyping: isTyping,
         });
       }
     });
