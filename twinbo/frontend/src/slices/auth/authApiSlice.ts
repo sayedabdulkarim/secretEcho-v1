@@ -10,6 +10,7 @@ export const userApiSlice = apiSlice.injectEndpoints({
         method: "POST",
         body: data,
       }),
+      invalidatesTags: ["User"],
     }),
     registerUser: builder.mutation({
       query: (data) => ({
@@ -18,8 +19,23 @@ export const userApiSlice = apiSlice.injectEndpoints({
         body: data,
       }),
     }),
+    logoutUser: builder.mutation({
+      query: () => ({
+        url: `${USERS_URL}/logout`,
+        method: "POST",
+      }),
+      invalidatesTags: ["User"],
+    }),
+    verifyToken: builder.query({
+      query: () => ({
+        url: `${USERS_URL}/verify`,
+        method: "GET",
+      }),
+      providesTags: ["User"],
+    }),
     getPrivateData: builder.query({
-      query: () => `${USERS_URL}/test`, // This sets up the URL for the GET request
+      query: () => `${USERS_URL}/profile`,
+      providesTags: ["User"],
     }),
   }),
 });
@@ -27,5 +43,7 @@ export const userApiSlice = apiSlice.injectEndpoints({
 export const {
   useLoginUserMutation,
   useRegisterUserMutation,
+  useLogoutUserMutation,
+  useVerifyTokenQuery,
   useGetPrivateDataQuery,
 } = userApiSlice;

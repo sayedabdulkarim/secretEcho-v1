@@ -3,7 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-hot-toast";
 import { AppDispatch, RootState } from "../../store";
-import { clearError, registerUser } from "../../slices/auth/authSlice";
+import { clearError } from "../../slices/auth/authSlice";
+import { useRegisterUserMutation } from "../../slices/auth/authApiSlice";
 
 const RegisterPage = () => {
   const [formData, setFormData] = useState({
@@ -15,7 +16,8 @@ const RegisterPage = () => {
 
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-  const { isLoading, error, userInfo } = useSelector(
+  const [registerUser, { isLoading }] = useRegisterUserMutation();
+  const { error, userInfo } = useSelector(
     (state: RootState) => state.authReducer
   );
 
@@ -63,19 +65,16 @@ const RegisterPage = () => {
     }
 
     try {
-      const result = await dispatch(
-        registerUser({
-          username: formData.username,
-          email: formData.email,
-          password: formData.password,
-        })
-      );
+      await registerUser({
+        username: formData.username,
+        email: formData.email,
+        password: formData.password,
+      }).unwrap();
 
-      if (registerUser.fulfilled.match(result)) {
-        toast.success("Registration successful! Please login.");
-        navigate("/login");
-      }
-    } catch (error) {
+      toast.success("Registration successful! Please login.");
+      navigate("/login");
+    } catch (error: any) {
+      toast.error(error?.data?.message || "Registration failed");
       console.error("Registration error:", error);
     }
   };

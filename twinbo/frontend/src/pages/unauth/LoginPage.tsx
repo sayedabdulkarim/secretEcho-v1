@@ -3,7 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-hot-toast";
 import { AppDispatch, RootState } from "../../store";
-import { loginUser, clearError } from "../../slices/auth/authSlice";
+import { clearError, setCredentials } from "../../slices/auth/authSlice";
+import { useLoginUserMutation } from "../../slices/auth/authApiSlice";
 
 const LoginPage = () => {
   const [formData, setFormData] = useState({
@@ -16,6 +17,7 @@ const LoginPage = () => {
   const { isLoading, error, userInfo } = useSelector(
     (state: RootState) => state.authReducer
   );
+  const [loginUser] = useLoginUserMutation();
 
   useEffect(() => {
     if (userInfo) {
@@ -46,13 +48,14 @@ const LoginPage = () => {
     }
 
     try {
-      const result = await dispatch(loginUser(formData));
-      if (loginUser.fulfilled.match(result)) {
-        toast.success("Login successful!");
-        navigate("/");
-      }
-    } catch (error) {
+      const result = await loginUser(formData).unwrap();
+      // If we get here, the login was successful
+      dispatch(setCredentials(result.data.user));
+      toast.success("Login successful!");
+      navigate("/");
+    } catch (error: any) {
       console.error("Login error:", error);
+      toast.error(error?.data?.message || "Login failed");
     }
   };
 
