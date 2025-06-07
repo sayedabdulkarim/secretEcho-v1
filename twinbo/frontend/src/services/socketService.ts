@@ -1,11 +1,12 @@
 import { io, Socket } from "socket.io-client";
 import { SocketMessage } from "../types/chat";
+import { API_CONFIG } from "../config/apiConfig";
 
 class SocketService {
   private socket: Socket | null = null;
 
   connect(token: string) {
-    this.socket = io("http://localhost:5001", {
+    this.socket = io(API_CONFIG.socketUrl, {
       auth: {
         token: token,
       },

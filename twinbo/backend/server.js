@@ -14,9 +14,29 @@ const { socketAuth, handleConnection } = require("./socket/socketHandler");
 const app = express();
 const server = http.createServer(app);
 
-// CORS options
+// CORS options - Allow both localhost for development and your frontend domain for production
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://localhost:3000",
+  process.env.FRONTEND_URL, // Set this environment variable in your deployment
+].filter(Boolean); // Remove undefined values
+
 const corsOptions = {
-  origin: "http://localhost:3000",
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      // In development, allow all origins
+      if (process.env.NODE_ENV !== "production") {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    }
+  },
   credentials: true,
 };
 // CORS middleware MUST come before any routes or body parsers
@@ -25,7 +45,21 @@ app.use(cors(corsOptions));
 // Socket.IO setup with CORS
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:3000",
+    origin: function (origin, callback) {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.indexOf(origin) !== -1) {
+        callback(null, true);
+      } else {
+        // In development, allow all origins
+        if (process.env.NODE_ENV !== "production") {
+          callback(null, true);
+        } else {
+          callback(new Error("Not allowed by CORS"));
+        }
+      }
+    },
     methods: ["GET", "POST"],
     credentials: true,
   },
