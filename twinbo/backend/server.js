@@ -7,6 +7,7 @@ const connectDB = require("./config/database");
 const authRoutes = require("./routes/authRoutes");
 const homeRoutes = require("./routes/homeRoutes");
 const chatRoutes = require("./routes/chatRoutes");
+const agentChatRoutes = require("./routes/agentChatRoutes");
 const { errorHandler, notFound } = require("./middleware/errorHandler");
 const { socketAuth, handleConnection } = require("./socket/socketHandler");
 
@@ -50,6 +51,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use("/api/auth", authRoutes);
 app.use("/api/home", homeRoutes);
 app.use("/api/chat", chatRoutes);
+app.use("/api/ai-agent", agentChatRoutes);
 
 // Health check route
 app.get("/", (req, res) => {
@@ -66,6 +68,8 @@ app.get("/", (req, res) => {
       conversations: "GET /api/chat/conversations (protected)",
       messages: "GET /api/chat/messages/:conversationId (protected)",
       sendMessage: "POST /api/chat/messages (protected)",
+      aiAgent: "POST /api/ai-agent/message (protected)",
+      aiAgentHistory: "GET /api/ai-agent/history (protected)",
     },
     realTime: {
       socketIO: "WebSocket connection available",

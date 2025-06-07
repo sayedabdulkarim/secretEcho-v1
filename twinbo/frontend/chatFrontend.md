@@ -78,5 +78,6 @@ Extend the frontend app (React + Redux Toolkit) to implement a one-to-one real-t
 - **Bonus:**
 
   - Show "typing..." indicator when other user is typing (Socket.IO event).
+  -
 
 we have to update only Frontend.
