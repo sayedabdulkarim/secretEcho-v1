@@ -17,6 +17,7 @@ const ChatPage = () => {
   const dispatch = useDispatch();
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [selectedUsername, setSelectedUsername] = useState<string | null>(null);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const { userInfo } = useSelector((state: RootState) => state.authReducer);
 
   useEffect(() => {
@@ -66,21 +67,35 @@ const ChatPage = () => {
     setSelectedUsername(username);
   };
 
+  const handleToggleSidebar = () => {
+    setIsSidebarCollapsed(!isSidebarCollapsed);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <Header />
 
       <div className="flex h-[calc(100vh-4rem)] overflow-hidden">
-        {/* Sidebar - 20% width */}
-        <div className="w-1/5 min-w-[300px] h-full">
+        {/* Sidebar - Dynamic width based on collapse state */}
+        <div
+          className={`${
+            isSidebarCollapsed ? "w-[5%] min-w-[60px]" : "w-1/5 min-w-[300px]"
+          } h-full transition-all duration-300`}
+        >
           <ChatSidebar
             onSelectUser={handleSelectUser}
             selectedUserId={selectedUserId}
+            isCollapsed={isSidebarCollapsed}
+            onToggleCollapse={handleToggleSidebar}
           />
         </div>
 
-        {/* Chat Area - 80% width */}
-        <div className="flex-1 h-full">
+        {/* Chat Area - Dynamic width based on sidebar state */}
+        <div
+          className={`${
+            isSidebarCollapsed ? "w-[95%]" : "flex-1"
+          } h-full transition-all duration-300`}
+        >
           <ChatArea
             selectedUserId={selectedUserId}
             selectedUsername={selectedUsername}
