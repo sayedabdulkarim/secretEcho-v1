@@ -81,7 +81,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
   const isUserOnline = onlineUsers.includes(selectedUserId);
 
   return (
-    <div className="flex-1 flex flex-col bg-white dark:bg-gray-800">
+    <div className="flex-1 flex flex-col h-full bg-white dark:bg-gray-800">
       {/* Chat Header */}
       <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
         <div className="flex items-center space-x-3">
@@ -115,25 +115,28 @@ const ChatArea: React.FC<ChatAreaProps> = ({
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Message Input */}
-      <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-        <form onSubmit={handleSendMessage} className="flex space-x-2">
+      {/* Message Input - Fixed at bottom */}
+      <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+        <form
+          onSubmit={handleSendMessage}
+          className="flex items-center space-x-3"
+        >
           <input
             type="text"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             placeholder="Type a message..."
-            className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-gray-700 dark:text-white"
+            className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-full focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 text-sm"
             disabled={isSending}
           />
           <button
             type="submit"
             disabled={!message.trim() || isSending}
-            className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition duration-200"
+            className="flex items-center justify-center w-10 h-10 bg-emerald-600 text-white rounded-full hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition duration-200 flex-shrink-0"
           >
             {isSending ? (
               <svg
-                className="animate-spin w-5 h-5"
+                className="animate-spin w-4 h-4"
                 fill="none"
                 viewBox="0 0 24 24"
               >
@@ -153,7 +156,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
               </svg>
             ) : (
               <svg
-                className="w-5 h-5"
+                className="w-4 h-4"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"

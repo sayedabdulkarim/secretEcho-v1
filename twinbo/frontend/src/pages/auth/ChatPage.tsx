@@ -48,9 +48,9 @@ const ChatPage = () => {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <Header />
 
-      <div className="flex h-[calc(100vh-4rem)]">
+      <div className="flex h-[calc(100vh-4rem)] overflow-hidden">
         {/* Sidebar - 20% width */}
-        <div className="w-1/5 min-w-[300px]">
+        <div className="w-1/5 min-w-[300px] h-full">
           <ChatSidebar
             onSelectUser={handleSelectUser}
             selectedUserId={selectedUserId}
@@ -58,7 +58,7 @@ const ChatPage = () => {
         </div>
 
         {/* Chat Area - 80% width */}
-        <div className="flex-1">
+        <div className="flex-1 h-full">
           <ChatArea
             selectedUserId={selectedUserId}
             selectedUsername={selectedUsername}
