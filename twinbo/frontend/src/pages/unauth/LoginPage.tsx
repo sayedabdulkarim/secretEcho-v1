@@ -50,7 +50,12 @@ const LoginPage = () => {
     try {
       const result = await loginUser(formData).unwrap();
       // If we get here, the login was successful
-      dispatch(setCredentials(result.data.user));
+      dispatch(
+        setCredentials({
+          user: result.data.user,
+          token: result.data.token,
+        })
+      );
       toast.success("Login successful!");
       navigate("/");
     } catch (error: any) {

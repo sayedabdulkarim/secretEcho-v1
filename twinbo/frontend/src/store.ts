@@ -2,10 +2,12 @@ import { configureStore } from "@reduxjs/toolkit";
 //reducers
 import { apiSlice } from "./slices/apiSlice";
 import authReducer from "./slices/auth/authSlice";
+import chatReducer from "./slices/chat/chatSlice";
 
 const store = configureStore({
   reducer: {
     authReducer,
+    chatReducer,
     [apiSlice.reducerPath]: apiSlice.reducer,
   },
   middleware: (getDefaultMiddleware) =>

@@ -1,52 +1,22 @@
 import React from "react";
-import { useSelector, useDispatch } from "react-redux";
-import { useNavigate } from "react-router-dom";
-import { toast } from "react-hot-toast";
-import { logoutUser } from "../../slices/auth/authSlice";
-import { AppDispatch, RootState } from "../../store";
+import { useSelector } from "react-redux";
+import { RootState } from "../../store";
+import Header from "../../component/Header";
 
 const HomePage = () => {
-  const dispatch = useDispatch<AppDispatch>();
-  const navigate = useNavigate();
   const { userInfo } = useSelector((state: RootState) => state.authReducer);
 
-  const handleLogout = () => {
-    dispatch(logoutUser());
-    toast.success("Logged out successfully");
-    navigate("/login");
-  };
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-100">
-      {/* Navigation */}
-      <nav className="bg-white shadow-lg">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <h1 className="text-xl font-bold text-gray-900">Dashboard</h1>
-            </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-gray-700">
-                Hello, {userInfo?.username}!
-              </span>
-              <button
-                onClick={handleLogout}
-                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
-              >
-                Logout
-              </button>
-            </div>
-          </div>
-        </div>
-      </nav>
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-100 dark:from-gray-900 dark:to-gray-800">
+      <Header />
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
         <div className="text-center">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
             Welcome, {userInfo?.username}! 🎉
           </h1>
-          <p className="text-xl text-gray-600 mb-8">
+          <p className="text-xl text-gray-600 dark:text-gray-300 mb-8">
             You have successfully logged in to the application.
           </p>
         </div>
@@ -54,12 +24,12 @@ const HomePage = () => {
         {/* Cards */}
         <div className="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* User Info Card */}
-          <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition duration-300">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 hover:shadow-xl transition duration-300">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
                   <svg
-                    className="w-6 h-6 text-blue-600"
+                    className="w-6 h-6 text-blue-600 dark:text-blue-400"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -74,24 +44,26 @@ const HomePage = () => {
                 </div>
               </div>
               <div className="ml-4">
-                <h3 className="text-lg font-medium text-gray-900">Profile</h3>
-                <p className="text-sm text-gray-500">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                  Profile
+                </h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
                   Your account information
                 </p>
               </div>
             </div>
             <div className="mt-4">
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-gray-600 dark:text-gray-300">
                 <span className="font-medium">Email:</span> {userInfo?.email}
               </p>
-              <p className="text-sm text-gray-600 mt-1">
+              <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
                 <span className="font-medium">Name:</span> {userInfo?.username}
               </p>
             </div>
           </div>
 
           {/* Security Card */}
-          <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition duration-300">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 hover:shadow-xl transition duration-300">
             <div className="flex items-center">
               <div className="flex-shrink-0">
                 <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
@@ -150,12 +122,9 @@ const HomePage = () => {
               </div>
             </div>
             <div className="mt-4">
-              <button
-                onClick={handleLogout}
-                className="w-full bg-red-50 hover:bg-red-100 text-red-700 px-3 py-2 rounded-lg text-sm font-medium transition duration-200"
-              >
-                Sign Out
-              </button>
+              <div className="text-sm text-gray-600 dark:text-gray-300">
+                Use the logout button in the header to sign out.
+              </div>
             </div>
           </div>
         </div>

@@ -10,6 +10,7 @@ import PublicRoute from "../component/PublicRoute";
 import PrivateRoute from "../component/PrivateRoute";
 
 //auth routes
+import ChatScreen from "../pages/auth/ChatPage";
 import HomeScreen from "../pages/auth/HomePage";
 //unauth routes
 import LoginScreen from "../pages/unauth/LoginPage";
@@ -25,7 +26,8 @@ export const router = createBrowserRouter(
       </Route>
       {/* private routes */}
       <Route path="" element={<PrivateRoute />}>
-        <Route index={true} path="/" element={<HomeScreen />} />
+        <Route index={true} path="/" element={<ChatScreen />} />
+        <Route path="/home" element={<HomeScreen />} />
       </Route>
       <Route path="*" element={<h1>404 Component</h1>} />
     </Route>
