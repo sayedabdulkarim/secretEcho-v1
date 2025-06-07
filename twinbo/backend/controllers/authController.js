@@ -61,6 +61,15 @@ const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
+    // Validate required fields
+    if (!email || !password) {
+      const error = new Error(
+        "Login validation failed: Email and password are required"
+      );
+      error.statusCode = 500;
+      throw error;
+    }
+
     // Find user by email
     const user = await User.findOne({ email });
 

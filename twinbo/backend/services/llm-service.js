@@ -21,6 +21,11 @@ class LLMService {
 
   // Generate chat response with conversation context
   async generateChatResponse(messages, maxTokens = 1000) {
+    // Validate input
+    if (!messages || !Array.isArray(messages) || messages.length === 0) {
+      throw new LLMServiceError("Messages array cannot be empty");
+    }
+
     const maxRetries = 3;
 
     for (let attempt = 0; attempt < maxRetries; attempt++) {
@@ -52,18 +57,37 @@ class LLMService {
           );
         }
 
-        return response.data.choices[0].message.content;
+        // Return both content and usage information for consistency with tests
+        return {
+          content: response.data.choices[0].message.content,
+          usage: response.data.usage || {
+            prompt_tokens: 0,
+            completion_tokens: 0,
+            total_tokens: 0,
+          },
+        };
       } catch (error) {
         console.error(`Error on attempt ${attempt + 1}:`, error.message);
 
+        // Handle rate limiting specifically
+        if (error.response && error.response.status === 429) {
+          throw new LLMServiceError(
+            "Rate limit exceeded. Please try again later."
+          );
+        }
+
         if (attempt < maxRetries - 1) {
-          const waitTime = (attempt + 1) * 5000; // Progressive retry delay in ms
+          const waitTime =
+            process.env.NODE_ENV === "test" ? 10 : (attempt + 1) * 5000; // Shorter wait time for tests
           console.warn(`Retrying in ${waitTime / 1000}s...`);
           await new Promise((resolve) => setTimeout(resolve, waitTime));
           continue;
         }
 
-        throw new LLMServiceError(`Error generating response: ${error.message}`);
+        // After all retries failed
+        throw new LLMServiceError(
+          `Failed to generate response after ${maxRetries} attempts`
+        );
       }
     }
   }

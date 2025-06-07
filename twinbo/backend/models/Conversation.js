@@ -31,6 +31,13 @@ ConversationSchema.pre("save", function (next) {
     return next(new Error("Participants must be different users"));
   }
 
+  // Prevent changing participants after creation
+  if (!this.isNew && this.isModified("participants")) {
+    return next(
+      new Error("Cannot modify participants after conversation creation")
+    );
+  }
+
   next();
 });
 

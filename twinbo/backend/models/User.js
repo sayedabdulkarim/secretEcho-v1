@@ -44,6 +44,14 @@ UserSchema.pre("save", async function (next) {
 
 // Compare password method
 UserSchema.methods.comparePassword = async function (candidatePassword) {
+  // Handle null, undefined, or empty string cases
+  if (
+    !candidatePassword ||
+    candidatePassword === null ||
+    candidatePassword === undefined
+  ) {
+    return false;
+  }
   return await bcrypt.compare(candidatePassword, this.password);
 };
 
