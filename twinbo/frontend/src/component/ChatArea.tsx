@@ -1,7 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "../store";
-import { useSendMessageMutation } from "../slices/chat/chatApiSlice";
+import {
+  useSendMessageMutation,
+  useGetConversationsQuery,
+  useGetMessagesQuery,
+} from "../slices/chat/chatApiSlice";
+import { addMessage } from "../slices/chat/chatSlice";
 
 interface ChatAreaProps {
   selectedUserId: string | null;
@@ -12,11 +17,54 @@ const ChatArea: React.FC<ChatAreaProps> = ({
   selectedUserId,
   selectedUsername,
 }) => {
+  const dispatch = useDispatch();
   const [message, setMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { onlineUsers } = useSelector((state: RootState) => state.chatReducer);
+  const { onlineUsers, messages } = useSelector(
+    (state: RootState) => state.chatReducer
+  );
+  const { userInfo } = useSelector((state: RootState) => state.authReducer);
 
   const [sendMessage, { isLoading: isSending }] = useSendMessageMutation();
+
+  // Get conversations to find the conversation between current user and selected user
+  const { data: conversationsResponse } = useGetConversationsQuery();
+  const conversations = conversationsResponse?.data?.conversations || [];
+
+  // Find conversation between current user and selected user
+  const currentConversation = conversations.find(
+    (conversation) => conversation.otherParticipant._id === selectedUserId
+  );
+
+  // Fetch messages for the current conversation
+  const { data: messagesResponse } = useGetMessagesQuery(
+    currentConversation?._id || "",
+    {
+      skip: !currentConversation?._id,
+    }
+  );
+
+  // Use messages from API if available, otherwise use messages from Redux store
+  const apiMessages = messagesResponse?.data?.messages || [];
+  const reduxMessages = messages.filter(
+    (msg) =>
+      (msg.sender._id === userInfo?._id &&
+        msg.recipient._id === selectedUserId) ||
+      (msg.sender._id === selectedUserId && msg.recipient._id === userInfo?._id)
+  );
+
+  // Combine API messages with Redux messages, avoiding duplicates
+  const allMessages = [...apiMessages];
+  reduxMessages.forEach((reduxMsg) => {
+    if (!allMessages.find((apiMsg) => apiMsg._id === reduxMsg._id)) {
+      allMessages.push(reduxMsg);
+    }
+  });
+
+  // Sort messages by creation date
+  const currentMessages = allMessages.sort(
+    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+  );
 
   // For now, we'll skip fetching messages until we have a conversation ID
   // This would need to be implemented once conversations are properly set up
@@ -27,7 +75,27 @@ const ChatArea: React.FC<ChatAreaProps> = ({
 
   useEffect(() => {
     scrollToBottom();
-  }, []);
+  }, [currentMessages]);
+
+  // Debug effect to log state
+  useEffect(() => {
+    console.log("ChatArea Debug:", {
+      selectedUserId,
+      selectedUsername,
+      currentConversation,
+      apiMessagesCount: apiMessages.length,
+      reduxMessagesCount: reduxMessages.length,
+      totalMessagesCount: currentMessages.length,
+      allMessages: currentMessages,
+    });
+  }, [
+    selectedUserId,
+    selectedUsername,
+    currentConversation,
+    apiMessages.length,
+    reduxMessages.length,
+    currentMessages,
+  ]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,10 +105,16 @@ const ChatArea: React.FC<ChatAreaProps> = ({
     }
 
     try {
-      await sendMessage({
+      const response = await sendMessage({
         recipientId: selectedUserId,
         text: message.trim(),
       }).unwrap();
+
+      // Add message to local state immediately for better UX
+      // The socket event will also add it, but this ensures immediate display
+      if (response.data?.message) {
+        dispatch(addMessage(response.data.message));
+      }
 
       setMessage("");
     } catch (error) {
@@ -108,10 +182,45 @@ const ChatArea: React.FC<ChatAreaProps> = ({
 
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {/* This would be populated with actual messages */}
-        <div className="text-center text-gray-500 dark:text-gray-400 py-8">
-          Start a conversation with {selectedUsername}
-        </div>
+        {currentMessages.length > 0 ? (
+          currentMessages.map((msg) => {
+            const isOwnMessage = msg.sender._id === userInfo?._id;
+            return (
+              <div
+                key={msg._id}
+                className={`flex ${
+                  isOwnMessage ? "justify-end" : "justify-start"
+                }`}
+              >
+                <div
+                  className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                    isOwnMessage
+                      ? "bg-emerald-500 text-white"
+                      : "bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white"
+                  }`}
+                >
+                  <p className="text-sm">{msg.text}</p>
+                  <p
+                    className={`text-xs mt-1 ${
+                      isOwnMessage
+                        ? "text-emerald-100"
+                        : "text-gray-500 dark:text-gray-400"
+                    }`}
+                  >
+                    {new Date(msg.createdAt).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </p>
+                </div>
+              </div>
+            );
+          })
+        ) : (
+          <div className="text-center text-gray-500 dark:text-gray-400 py-8">
+            Start a conversation with {selectedUsername}
+          </div>
+        )}
         <div ref={messagesEndRef} />
       </div>
 

@@ -207,6 +207,14 @@ const sendMessage = async (req, res, next) => {
       messageData
     );
 
+    // Also emit to sender so they see their own message immediately
+    const senderNotified = emitToUser(
+      req.app.get("io"),
+      senderId.toString(),
+      "newMessage",
+      messageData
+    );
+
     // Return the message data for Socket.IO emission
     res.status(201).json({
       status: "success",
@@ -215,6 +223,7 @@ const sendMessage = async (req, res, next) => {
         message: messageData,
         conversationId: conversation._id,
         recipientOnline: recipientNotified,
+        senderNotified: senderNotified,
       },
     });
   } catch (error) {

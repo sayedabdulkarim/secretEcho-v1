@@ -8,21 +8,30 @@ export interface ChatUser {
 export interface Message {
   _id: string;
   conversationId: string;
-  sender: string;
-  recipient: string;
+  sender: {
+    _id: string;
+    username: string;
+  };
+  recipient: {
+    _id: string;
+    username: string;
+  };
   text: string;
   createdAt: string;
 }
 
 export interface Conversation {
   _id: string;
-  participants: string[];
+  otherParticipant: {
+    _id: string;
+    username: string;
+    email: string;
+  };
   lastMessage?: {
     text: string;
     createdAt: string;
     sender: string;
   };
-  createdAt: string;
   updatedAt: string;
 }
 
@@ -46,8 +55,14 @@ export interface SendMessageRequest {
 export interface SocketMessage {
   _id: string;
   conversationId: string;
-  sender: string;
-  recipient: string;
+  sender: {
+    _id: string;
+    username: string;
+  };
+  recipient: {
+    _id: string;
+    username: string;
+  };
   text: string;
   createdAt: string;
 }
