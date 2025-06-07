@@ -53,6 +53,16 @@ const handleConnection = (io) => {
       username: socket.user.username,
     });
 
+    // Send list of online users to newly connected user (including themselves)
+    const onlineUsers = Array.from(connectedUsers.entries()).map(
+      ([userId, data]) => ({
+        userId,
+        username: data.user.username,
+      })
+    );
+
+    socket.emit("onlineUsers", onlineUsers);
+
     // Handle sending messages via socket
     socket.on("sendMessage", async (data) => {
       try {
@@ -116,16 +126,6 @@ const handleConnection = (io) => {
         username: socket.user.username,
       });
     });
-
-    // Send list of online users to newly connected user
-    const onlineUsers = Array.from(connectedUsers.entries()).map(
-      ([userId, data]) => ({
-        userId,
-        username: data.user.username,
-      })
-    );
-
-    socket.emit("onlineUsers", onlineUsers);
   };
 };
 

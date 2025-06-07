@@ -1,12 +1,19 @@
 import React, { useState, useEffect } from "react";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "../../store";
 import Header from "../../component/Header";
 import ChatSidebar from "../../component/ChatSidebar";
 import ChatArea from "../../component/ChatArea";
 import socketService from "../../services/socketService";
+import {
+  setOnlineUsers,
+  addOnlineUser,
+  removeOnlineUser,
+  addMessage,
+} from "../../slices/chat/chatSlice";
 
 const ChatPage = () => {
+  const dispatch = useDispatch();
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [selectedUsername, setSelectedUsername] = useState<string | null>(null);
   const { userInfo } = useSelector((state: RootState) => state.authReducer);
@@ -16,20 +23,27 @@ const ChatPage = () => {
     if (userInfo?.token) {
       socketService.connect(userInfo.token);
 
-      // Set up socket event listeners here
-      socketService.onUserOnline((userId) => {
-        console.log("User came online:", userId);
-        // You can dispatch actions to update Redux state here
+      // Listen for initial online users list
+      socketService.onOnlineUsers((users) => {
+        console.log("Online users received:", users);
+        const userIds = users.map((user) => user.userId);
+        dispatch(setOnlineUsers(userIds));
       });
 
-      socketService.onUserOffline((userId) => {
-        console.log("User went offline:", userId);
-        // You can dispatch actions to update Redux state here
+      // Set up socket event listeners here
+      socketService.onUserOnline((data) => {
+        console.log("User came online:", data);
+        dispatch(addOnlineUser(data.userId));
+      });
+
+      socketService.onUserOffline((data) => {
+        console.log("User went offline:", data);
+        dispatch(removeOnlineUser(data.userId));
       });
 
       socketService.onMessage((message) => {
         console.log("New message received:", message);
-        // You can dispatch actions to update Redux state here
+        dispatch(addMessage(message));
       });
 
       // Cleanup on component unmount
@@ -37,7 +51,7 @@ const ChatPage = () => {
         socketService.disconnect();
       };
     }
-  }, [userInfo?.token]);
+  }, [userInfo?.token, dispatch]);
 
   const handleSelectUser = (userId: string, username: string) => {
     setSelectedUserId(userId);

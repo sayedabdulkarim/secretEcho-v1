@@ -52,15 +52,25 @@ class SocketService {
     }
   }
 
-  onUserOnline(callback: (userId: string) => void) {
+  onUserOnline(callback: (data: { userId: string; username: string }) => void) {
     if (this.socket) {
       this.socket.on("userOnline", callback);
     }
   }
 
-  onUserOffline(callback: (userId: string) => void) {
+  onUserOffline(
+    callback: (data: { userId: string; username: string }) => void
+  ) {
     if (this.socket) {
       this.socket.on("userOffline", callback);
+    }
+  }
+
+  onOnlineUsers(
+    callback: (users: Array<{ userId: string; username: string }>) => void
+  ) {
+    if (this.socket) {
+      this.socket.on("onlineUsers", callback);
     }
   }
 
