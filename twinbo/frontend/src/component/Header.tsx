@@ -28,6 +28,19 @@ const Header = () => {
     localStorage.setItem("darkMode", JSON.stringify(isDarkMode));
   }, [isDarkMode]);
 
+  // Initialize dark mode on component mount
+  React.useEffect(() => {
+    // This ensures the initial state is applied to the DOM
+    const saved = localStorage.getItem("darkMode");
+    const initialDarkMode = saved !== null ? JSON.parse(saved) : true;
+
+    if (initialDarkMode) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, []);
+
   const handleLogout = async () => {
     try {
       await logoutUserMutation({}).unwrap();
