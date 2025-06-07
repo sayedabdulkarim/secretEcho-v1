@@ -49,28 +49,3 @@ export const { setCredentials, logoutUser, clearError, setLoading, setError } =
   authSlice.actions;
 
 export default authSlice.reducer;
-
-// export const registerUser = createAsyncThunk(
-//   "auth/register",
-//   async (credentials: RegisterCredentials, { rejectWithValue }) => {
-//     try {
-//       const response = await fetch("http://localhost:5001/api/auth/register", {
-//         method: "POST",
-//         headers: {
-//           "Content-Type": "application/json",
-//         },
-//         body: JSON.stringify(credentials),
-//       });
-
-//       const data = await response.json();
-
-//       if (!response.ok) {
-//         return rejectWithValue(data.message || "Registration failed");
-//       }
-
-//       return data;
-//     } catch (error: any) {
-//       return rejectWithValue(error.message || "Registration failed");
-//     }
-//   }
-// );
